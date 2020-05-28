@@ -7,5 +7,6 @@ target 'GitHubApp' do
 
   # Pods for GitHubApp
   pod 'Kingfisher'
+  pod 'SnapKit'
 
 end
