@@ -8,12 +8,15 @@
 
 import UIKit
 import SnapKit
+import Kingfisher
 
 final class AuthoriseViewController: UIViewController {
   
   private let logoImageView: UIImageView = {
     let imageView = UIImageView()
-    imageView.backgroundColor = .blue
+    imageView.kf.indicatorType = .activity
+    let url = URL(string: "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png")
+    imageView.kf.setImage(with: url)
     return imageView
   }()
   
@@ -28,6 +31,7 @@ final class AuthoriseViewController: UIViewController {
     let textField = UITextField()
     textField.borderStyle = .roundedRect
     textField.placeholder = "password"
+    textField.isSecureTextEntry = true
     return textField
   }()
   
@@ -35,17 +39,20 @@ final class AuthoriseViewController: UIViewController {
     let button = UIButton()
     button.setTitle("Login", for: .normal)
     button.setTitleColor(.systemBlue, for: .normal)
+    button.showsTouchWhenHighlighted = true
     button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 20)
+    button.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
     return button
   }()
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    
     view.backgroundColor = .white
     setupLayout()
-  }
-  
-  
+    
+    handleKeyboard()
+  }    
 }
 
 extension AuthoriseViewController {
@@ -78,3 +85,19 @@ extension AuthoriseViewController {
   }
 }
 
+extension AuthoriseViewController {
+  private func handleKeyboard() {
+    let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    view.addGestureRecognizer(tap)
+  }
+  
+  @objc private func dismissKeyboard() {
+    view.endEditing(true)
+  }
+}
+
+extension AuthoriseViewController {
+  @objc private func loginButtonTapped() {
+    print("login button tapped")
+  }
+}
