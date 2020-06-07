@@ -14,6 +14,7 @@ final class AuthoriseViewController: UIViewController {
   
   private let logoImageView: UIImageView = {
     let imageView = UIImageView()
+    imageView.contentMode = .scaleAspectFit
     imageView.kf.indicatorType = .activity
     let url = URL(string: "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png")
     imageView.kf.setImage(with: url)
@@ -98,6 +99,7 @@ extension AuthoriseViewController {
 
 extension AuthoriseViewController {
   @objc private func loginButtonTapped() {
+    navigationController?.pushViewController(SearchViewController(), animated: true)
     print("login button tapped")
   }
 }
