@@ -16,6 +16,7 @@ final class AuthoriseViewController: UIViewController {
     let imageView = UIImageView()
     imageView.contentMode = .scaleAspectFit
     imageView.kf.indicatorType = .activity
+    // Строку лучше в константу вынести
     let url = URL(string: "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png")
     imageView.kf.setImage(with: url)
     return imageView

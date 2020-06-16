@@ -21,6 +21,7 @@ final class SearchViewController: UIViewController {
   
   let sharedSession = URLSession.shared
   
+  // Название свойств с маленькой буквы
   private let UserNameLabel: UILabel = {
     let label = UILabel()
     label.text = "UserName"
@@ -29,6 +30,7 @@ final class SearchViewController: UIViewController {
     return label
   }()
   
+  // Название свойств с маленькой буквы
   private let UserAvatarImageView: UIImageView = {
     let image = UIImageView()
     image.backgroundColor = .systemGray3
@@ -37,6 +39,7 @@ final class SearchViewController: UIViewController {
     return image
   }()
   
+  // Название свойств с маленькой буквы
   private let SearchLabel: UILabel = {
     let label = UILabel()
     label.text = "Search repository"
@@ -58,6 +61,7 @@ final class SearchViewController: UIViewController {
     return textField
   }()
   
+  // Название свойств с маленькой буквы
   private let SortingTypeSegmentControl: UISegmentedControl = {
     let segmentedControl = UISegmentedControl(items: ["ascended", "descended"])
     segmentedControl.selectedSegmentIndex = 0
@@ -70,6 +74,7 @@ final class SearchViewController: UIViewController {
     return segmentedControl
   }()
   
+  // Название свойств с маленькой буквы
   private lazy var StartSearchButton: UIButton = {
     let button = UIButton()
     button.setTitle("Start Search", for: .normal)
@@ -171,6 +176,7 @@ extension SearchViewController {
     if let repoName = repositoryNameTextField.text,
       let language = languageTextField.text {
       
+      // Форматирование поехало
       if !repoName.isEmpty
       {
       urlComponents.queryItems = [
@@ -203,6 +209,8 @@ extension SearchViewController {
     
     let dataTask = sharedSession.dataTask(with: urlRequest) {
       data, response, error in
+      
+      // Форматирование поехало
         if let error = error {
           print(error.localizedDescription)
           return
