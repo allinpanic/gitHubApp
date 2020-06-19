@@ -12,11 +12,13 @@ import Kingfisher
 
 final class AuthoriseViewController: UIViewController {
   
-  private let logoImageView: UIImageView = {
+  let gitHubLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png"
+  
+  private lazy var logoImageView: UIImageView = {
     let imageView = UIImageView()
     imageView.contentMode = .scaleAspectFit
     imageView.kf.indicatorType = .activity
-    let url = URL(string: "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png")
+    let url = URL(string: gitHubLogoUrl)
     imageView.kf.setImage(with: url)
     return imageView
   }()

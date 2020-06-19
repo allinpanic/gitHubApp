@@ -10,7 +10,7 @@ import UIKit
 import Foundation
 
 final class SearchViewController: UIViewController {
-  
+ //MARK: - Network Properties
   let scheme = "https"
   let host = "api.github.com"
   let searchRepoPath = "/search/repositories"
@@ -21,7 +21,8 @@ final class SearchViewController: UIViewController {
   
   let sharedSession = URLSession.shared
   
-  private let UserNameLabel: UILabel = {
+//MARK: - UI properties
+  private let userNameLabel: UILabel = {
     let label = UILabel()
     label.text = "UserName"
     label.font = .boldSystemFont(ofSize: 20)
@@ -29,7 +30,7 @@ final class SearchViewController: UIViewController {
     return label
   }()
   
-  private let UserAvatarImageView: UIImageView = {
+  private let userAvatarImageView: UIImageView = {
     let image = UIImageView()
     image.backgroundColor = .systemGray3
     image.layer.cornerRadius = 50
@@ -37,28 +38,32 @@ final class SearchViewController: UIViewController {
     return image
   }()
   
-  private let SearchLabel: UILabel = {
+  private let searchLabel: UILabel = {
     let label = UILabel()
     label.text = "Search repository"
     label.font = .boldSystemFont(ofSize: 24)
     return label
   }()
   
-  private let repositoryNameTextField: UITextField = {
+  private lazy var repositoryNameTextField: UITextField = {
     let textField = UITextField()
     textField.placeholder = "repository name"
     textField.borderStyle = .roundedRect
+    textField.delegate = self
+    textField.returnKeyType = .done
     return textField
   }()
   
-  private let languageTextField: UITextField = {
+  private lazy var languageTextField: UITextField = {
     let textField = UITextField()
     textField.placeholder = "language"
     textField.borderStyle = .roundedRect
+    textField.delegate = self
+    textField.returnKeyType = .done
     return textField
   }()
   
-  private let SortingTypeSegmentControl: UISegmentedControl = {
+  private let sortingTypeSegmentControl: UISegmentedControl = {
     let segmentedControl = UISegmentedControl(items: ["ascended", "descended"])
     segmentedControl.selectedSegmentIndex = 0
     segmentedControl.selectedSegmentTintColor = .systemGray3
@@ -70,14 +75,15 @@ final class SearchViewController: UIViewController {
     return segmentedControl
   }()
   
-  private lazy var StartSearchButton: UIButton = {
+  private lazy var startSearchButton: UIButton = {
     let button = UIButton()
     button.setTitle("Start Search", for: .normal)
     button.titleLabel?.font = .boldSystemFont(ofSize: 28)
     button.setTitleColor(.systemBlue, for: .normal)
-    button.addTarget(self, action: #selector(performSearchRequest), for: .touchUpInside)
+    button.addTarget(self, action: #selector(searchButtonPressed), for: .touchUpInside)
     return button
   }()
+//MARK: - ViewDidLoad
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -97,52 +103,59 @@ final class SearchViewController: UIViewController {
     navigationController?.setNavigationBarHidden(false, animated: animated)
   }
 }
+// MARK: - setupLAyout
 
 extension SearchViewController {
   private func setupLayout() {
-    let views = [UserNameLabel, UserAvatarImageView, SearchLabel, repositoryNameTextField,
-                 languageTextField, SortingTypeSegmentControl, StartSearchButton]
+    let views = [userNameLabel, userAvatarImageView, searchLabel, repositoryNameTextField,
+                 languageTextField, sortingTypeSegmentControl, startSearchButton]
     views.forEach({view.addSubview($0)})
     
-    UserNameLabel.snp.makeConstraints {
+    userNameLabel.snp.makeConstraints {
       $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(60)
       $0.centerX.equalToSuperview()
     }
     
-    UserAvatarImageView.snp.makeConstraints {
+    userAvatarImageView.snp.makeConstraints {
       $0.centerX.equalToSuperview()
-      $0.top.equalTo(UserNameLabel.snp.bottom).inset(-25)
+      $0.top.equalTo(userNameLabel.snp.bottom).inset(-20)
       $0.width.height.equalTo(100)
     }
     
-    SearchLabel.snp.makeConstraints {
-      $0.top.equalTo(UserAvatarImageView.snp.bottom).inset(-40)
+    searchLabel.snp.makeConstraints {
+      $0.top.equalTo(userAvatarImageView.snp.bottom).inset(-35)
       $0.centerX.equalToSuperview()
     }
     
     repositoryNameTextField.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(50)
-      $0.top.equalTo(SearchLabel.snp.bottom).inset(-20)
+      $0.top.equalTo(searchLabel.snp.bottom).inset(-20)
     }
     
     languageTextField.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(50)
-      $0.top.equalTo(repositoryNameTextField.snp.bottom).inset(-16)
+      $0.top.equalTo(repositoryNameTextField.snp.bottom).inset(-15)
     }
     
-    SortingTypeSegmentControl.snp.makeConstraints {
+    sortingTypeSegmentControl.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(50)
       $0.top.equalTo(languageTextField.snp.bottom).inset(-30)
     }
     
-    StartSearchButton.snp.makeConstraints {
+    startSearchButton.snp.makeConstraints {
       $0.centerX.equalToSuperview()
-      $0.top.equalTo(SortingTypeSegmentControl.snp.bottom).inset(-40)
+      $0.top.equalTo(sortingTypeSegmentControl.snp.bottom).inset(-40)
     }    
   }
 }
+//MARK: - TextFieldDelegate, Keyboard handler
 
-extension SearchViewController {
+extension SearchViewController: UITextFieldDelegate {
+  func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    dismissKeyboard()
+    return true
+  }
+  
   private func handleKeyboard() {
     let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
     view.addGestureRecognizer(tap)
@@ -152,6 +165,7 @@ extension SearchViewController {
     view.endEditing(true)
   }
 }
+//MARK: - Network Methods
 
 extension SearchViewController {
   private func makeSearchRequest() -> URLRequest? {
@@ -162,7 +176,7 @@ extension SearchViewController {
     urlComponents.host = host
     urlComponents.path = searchRepoPath
     
-    if SortingTypeSegmentControl.selectedSegmentIndex == 0 {
+    if sortingTypeSegmentControl.selectedSegmentIndex == 0 {
       orderType = "asc"
     } else {
       orderType = "desc"
@@ -171,13 +185,12 @@ extension SearchViewController {
     if let repoName = repositoryNameTextField.text,
       let language = languageTextField.text {
       
-      if !repoName.isEmpty
-      {
-      urlComponents.queryItems = [
-        URLQueryItem(name: "q", value: "\(repoName)+language:\(language)"),
-        URLQueryItem(name: "sort", value: "stars"),
-        URLQueryItem(name: "order", value: orderType)
-      ]
+      if !repoName.isEmpty {
+        urlComponents.queryItems = [
+          URLQueryItem(name: "q", value: "\(repoName)+language:\(language)"),
+          URLQueryItem(name: "sort", value: "stars"),
+          URLQueryItem(name: "order", value: orderType)
+        ]
       } else {
         let alert = UIAlertController(title: "Repository name field is empty",
                                       message: "Specify a name and try again",
@@ -198,15 +211,16 @@ extension SearchViewController {
     return request
   }
   
-  @objc private func performSearchRequest() {
+  private func performSearchRequest(completionHandler: @escaping (Data)-> Void) {
     guard let urlRequest = makeSearchRequest() else {return}
     
     let dataTask = sharedSession.dataTask(with: urlRequest) {
       data, response, error in
-        if let error = error {
-          print(error.localizedDescription)
-          return
-        }
+      
+      if let error = error {
+        print(error.localizedDescription)
+        return
+      }
       
       if let httpResponse = response as? HTTPURLResponse {
         print("http status code: \(httpResponse.statusCode)")
@@ -217,14 +231,38 @@ extension SearchViewController {
         return
       }
       
-      guard let text = try? JSONSerialization.jsonObject(with: data, options: []) else {
-        print("data encoding failed")
-        return
-      }
-      
-      print("received data: \n \(text)")
+      completionHandler(data)
     }
     
     dataTask.resume()
+  }
+}
+//MARK: - Search Button Pressed
+
+extension SearchViewController {
+  @objc private func searchButtonPressed() {
+    dismissKeyboard()
+    
+    performSearchRequest(completionHandler: {
+      [weak self] jsonData in
+      print(jsonData)
+      
+      guard let repositoriesResult = self?.parseJson(jsonData: jsonData) else {return}
+      
+      DispatchQueue.main.async {
+        self?.navigationController?.pushViewController(SearchResultViewController(searchResult: repositoriesResult), animated: true)
+      }
+    })
+  }
+  
+  func parseJson(jsonData: Data) -> [Repository] {    
+    let decoder = JSONDecoder()
+    
+    guard let searchResult = try? decoder.decode(SearchResult.self, from: jsonData) else {
+      print("data decoding failed")
+      return []      
+    }
+    
+    return searchResult.items
   }
 }
