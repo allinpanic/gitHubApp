@@ -8,20 +8,14 @@
 
 import UIKit
 import Foundation
+import Kingfisher
 
-final class SearchViewController: UIViewController {
- //MARK: - Network Properties
-  let scheme = "https"
-  let host = "api.github.com"
-  let searchRepoPath = "/search/repositories"
-  let defaultHeaders = [
-    "Content-Type" : "application/json",
-    "Accept" : "application/vnd.github.v3+json"
-  ]
+final class SearchViewController: UIViewController {  
+  var user: GitUser
+  private let sharedSession = URLSession.shared
+  private let networkManager = NetworkManager()
   
-  let sharedSession = URLSession.shared
-  
-//MARK: - UI properties
+// MARK: - UI properties
   private let userNameLabel: UILabel = {
     let label = UILabel()
     label.text = "UserName"
@@ -83,11 +77,26 @@ final class SearchViewController: UIViewController {
     button.addTarget(self, action: #selector(searchButtonPressed), for: .touchUpInside)
     return button
   }()
-//MARK: - ViewDidLoad
+// MARK: - Inits
+  
+  init(user: GitUser) {
+    self.user = user
+    super.init(nibName: nil, bundle: nil)
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  // MARK: - ViewDidLoad
   
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .white
+    guard let userName = user.login else {return}
+    userNameLabel.text = "Hello \(userName)"
+    guard let avatarURL = user.avatarURL else {return}
+    let url = URL(string: avatarURL)
+    userAvatarImageView.kf.setImage(with: url)
     
     setupLayout()
     handleKeyboard()
@@ -148,7 +157,7 @@ extension SearchViewController {
     }    
   }
 }
-//MARK: - TextFieldDelegate, Keyboard handler
+// MARK: - TextFieldDelegate, Keyboard handler
 
 extension SearchViewController: UITextFieldDelegate {
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -165,104 +174,45 @@ extension SearchViewController: UITextFieldDelegate {
     view.endEditing(true)
   }
 }
-//MARK: - Network Methods
+// MARK: - Search Button Pressed
 
 extension SearchViewController {
-  private func makeSearchRequest() -> URLRequest? {
-    var urlComponents = URLComponents()
+  @objc private func searchButtonPressed() {
+    dismissKeyboard()
+    
     var orderType: String
-    
-    urlComponents.scheme = scheme
-    urlComponents.host = host
-    urlComponents.path = searchRepoPath
-    
     if sortingTypeSegmentControl.selectedSegmentIndex == 0 {
       orderType = "asc"
     } else {
       orderType = "desc"
     }
     
-    if let repoName = repositoryNameTextField.text,
-      let language = languageTextField.text {
+    guard let repoName = repositoryNameTextField.text,
+      let language = languageTextField.text else {return}
+    
+    if !repoName.isEmpty{
+      guard let searchRequest = networkManager.makeSearchRequest(repoName: repoName,
+                                                                 language: language,
+                                                                 orderType: orderType) else {return}
       
-      if !repoName.isEmpty {
-        urlComponents.queryItems = [
-          URLQueryItem(name: "q", value: "\(repoName)+language:\(language)"),
-          URLQueryItem(name: "sort", value: "stars"),
-          URLQueryItem(name: "order", value: orderType)
-        ]
-      } else {
-        let alert = UIAlertController(title: "Repository name field is empty",
-                                      message: "Specify a name and try again",
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
-        present(alert, animated: true, completion: nil)
-        return nil
+      networkManager.performRequest(request: searchRequest, session: sharedSession) {
+        [weak self] (data) in
+        
+        guard let repositoriesResult = self?.networkManager.parseJSON(jsonData: data, toType: SearchResult.self) else {
+          return
+        }
+        
+        DispatchQueue.main.async {
+          self?.navigationController?.pushViewController(SearchResultViewController(searchResult: repositoriesResult.items),
+                                                         animated: true)
+        }
       }
+    } else {
+      let alert = UIAlertController(title: "Repository name field is empty",
+                                    message: "Specify a name and try again",
+                                    preferredStyle: .alert)
+      alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+      present(alert, animated: true, completion: nil)
     }
-    
-    guard let url = urlComponents.url else {
-      return nil
-    }
-    
-    var request = URLRequest(url: url)
-    request.allHTTPHeaderFields = defaultHeaders
-    
-    return request
-  }
-  
-  private func performSearchRequest(completionHandler: @escaping (Data)-> Void) {
-    guard let urlRequest = makeSearchRequest() else {return}
-    
-    let dataTask = sharedSession.dataTask(with: urlRequest) {
-      data, response, error in
-      
-      if let error = error {
-        print(error.localizedDescription)
-        return
-      }
-      
-      if let httpResponse = response as? HTTPURLResponse {
-        print("http status code: \(httpResponse.statusCode)")
-      }
-      
-      guard let data = data else {
-        print("no data received")
-        return
-      }
-      
-      completionHandler(data)
-    }
-    
-    dataTask.resume()
-  }
-}
-//MARK: - Search Button Pressed
-
-extension SearchViewController {
-  @objc private func searchButtonPressed() {
-    dismissKeyboard()
-    
-    performSearchRequest(completionHandler: {
-      [weak self] jsonData in
-      print(jsonData)
-      
-      guard let repositoriesResult = self?.parseJson(jsonData: jsonData) else {return}
-      
-      DispatchQueue.main.async {
-        self?.navigationController?.pushViewController(SearchResultViewController(searchResult: repositoriesResult), animated: true)
-      }
-    })
-  }
-  
-  func parseJson(jsonData: Data) -> [Repository] {    
-    let decoder = JSONDecoder()
-    
-    guard let searchResult = try? decoder.decode(SearchResult.self, from: jsonData) else {
-      print("data decoding failed")
-      return []      
-    }
-    
-    return searchResult.items
   }
 }

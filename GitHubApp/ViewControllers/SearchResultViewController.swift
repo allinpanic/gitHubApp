@@ -61,6 +61,14 @@ extension SearchResultViewController: UITableViewDelegate, UITableViewDataSource
   func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
     return 90
   }
+  
+  func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    guard let htmlString = repositoriesArray[indexPath.row].htmlURLString,
+      let url = URL(string: htmlString)
+      else {return}
+    
+    navigationController?.pushViewController(RepoWebViewController(url: url), animated: true)
+  }
 }
 
 extension SearchResultViewController {

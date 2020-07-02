@@ -11,8 +11,12 @@ import SnapKit
 import Kingfisher
 
 final class AuthoriseViewController: UIViewController {
+// MARK: - Private Properties
   
-  let gitHubLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png"
+  private let gitHubLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png"
+  
+  private let sharedSession = URLSession.shared
+  private let networkManager = NetworkManager()
   
   private lazy var logoImageView: UIImageView = {
     let imageView = UIImageView()
@@ -47,6 +51,7 @@ final class AuthoriseViewController: UIViewController {
     button.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
     return button
   }()
+// MARK: - ViewDidLoad
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -57,6 +62,7 @@ final class AuthoriseViewController: UIViewController {
     handleKeyboard()
   }    
 }
+// MARK: - setupLayout
 
 extension AuthoriseViewController {
   private func setupLayout() {
@@ -87,6 +93,7 @@ extension AuthoriseViewController {
     }
   }
 }
+// MARK: - Handle Keyboard
 
 extension AuthoriseViewController {
   private func handleKeyboard() {
@@ -98,10 +105,39 @@ extension AuthoriseViewController {
     view.endEditing(true)
   }
 }
+// MARK: - LoginButtonHandler
 
 extension AuthoriseViewController {
   @objc private func loginButtonTapped() {
-    navigationController?.pushViewController(SearchViewController(), animated: true)
-    print("login button tapped")
+    
+    guard let userName = userNameTextField.text,
+      let password = passwordTextField.text else {return}
+    
+    if !userName.isEmpty,
+      !password.isEmpty {
+      
+      let userNamePassword = "\(userName):\(password)"
+      guard let userNamePasswordBase64 = userNamePassword.data(using: .utf8)?.base64EncodedString() else {return}
+      
+      let url = URL(string: "https://api.github.com/user")
+      
+      var request = URLRequest(url: url!)
+      request.addValue("Basic \(userNamePasswordBase64)",
+        forHTTPHeaderField: "Authorization")
+      
+      
+      networkManager.performRequest(request: request, session: sharedSession) { [weak self] data in
+        guard let gitUser = self?.networkManager.parseJSON(jsonData: data,
+                                                           toType: GitUser.self) else {return}
+
+        DispatchQueue.main.async {
+          self?.navigationController?.pushViewController(SearchViewController(user: gitUser), animated: true)
+        }
+      }
+    } else {
+      let alertVC = UIAlertController(title: "Empty field", message: "Specify username or passwod", preferredStyle: .alert)
+      alertVC.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+      self.present(alertVC, animated: true, completion: nil)
+    }
   }
 }

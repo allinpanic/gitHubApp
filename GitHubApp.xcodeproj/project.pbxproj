@@ -17,6 +17,8 @@
 		E9BD968D2494FD5E0033B719 /* SearchResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9BD968C2494FD5E0033B719 /* SearchResultViewController.swift */; };
 		E9BD968F2494FED50033B719 /* RepoTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9BD968E2494FED50033B719 /* RepoTableViewCell.swift */; };
 		E9BD96912494FFAF0033B719 /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9BD96902494FFAF0033B719 /* Repository.swift */; };
+		E9F3A45124A9FFBF00F6CDD3 /* RepoWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F3A45024A9FFBF00F6CDD3 /* RepoWebViewController.swift */; };
+		E9F3A45424ADC96600F6CDD3 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F3A45324ADC96600F6CDD3 /* NetworkManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +35,8 @@
 		E9BD968C2494FD5E0033B719 /* SearchResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultViewController.swift; sourceTree = "<group>"; };
 		E9BD968E2494FED50033B719 /* RepoTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoTableViewCell.swift; sourceTree = "<group>"; };
 		E9BD96902494FFAF0033B719 /* Repository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repository.swift; sourceTree = "<group>"; };
+		E9F3A45024A9FFBF00F6CDD3 /* RepoWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoWebViewController.swift; sourceTree = "<group>"; };
+		E9F3A45324ADC96600F6CDD3 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		F53BD43E36C1D898305BF5EA /* Pods_GitHubApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GitHubApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -89,16 +93,26 @@
 			children = (
 				E9A905E524800A51001D00E1 /* AppDelegate.swift */,
 				E9A905F924801546001D00E1 /* SceneDelegate.swift */,
-				E9A905E924800A51001D00E1 /* AuthoriseViewController.swift */,
-				E9BD968A248BFE6E0033B719 /* SearchViewController.swift */,
-				E9BD968C2494FD5E0033B719 /* SearchResultViewController.swift */,
+				E9F3A45224ADC93500F6CDD3 /* ViewControllers */,
 				E9BD968E2494FED50033B719 /* RepoTableViewCell.swift */,
+				E9F3A45324ADC96600F6CDD3 /* NetworkManager.swift */,
 				E9BD96902494FFAF0033B719 /* Repository.swift */,
 				E9A905F024800A52001D00E1 /* LaunchScreen.storyboard */,
 				E9A905F324800A52001D00E1 /* Info.plist */,
 				E9A905EE24800A52001D00E1 /* Assets.xcassets */,
 			);
 			path = GitHubApp;
+			sourceTree = "<group>";
+		};
+		E9F3A45224ADC93500F6CDD3 /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
+				E9A905E924800A51001D00E1 /* AuthoriseViewController.swift */,
+				E9BD968A248BFE6E0033B719 /* SearchViewController.swift */,
+				E9BD968C2494FD5E0033B719 /* SearchResultViewController.swift */,
+				E9F3A45024A9FFBF00F6CDD3 /* RepoWebViewController.swift */,
+			);
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,7 +229,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9F3A45424ADC96600F6CDD3 /* NetworkManager.swift in Sources */,
 				E9BD96912494FFAF0033B719 /* Repository.swift in Sources */,
+				E9F3A45124A9FFBF00F6CDD3 /* RepoWebViewController.swift in Sources */,
 				E9A905EA24800A51001D00E1 /* AuthoriseViewController.swift in Sources */,
 				E9A905E624800A51001D00E1 /* AppDelegate.swift in Sources */,
 				E9BD968D2494FD5E0033B719 /* SearchResultViewController.swift in Sources */,
@@ -359,6 +375,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = UN8GF2STDS;
 				INFOPLIST_FILE = GitHubApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -377,6 +394,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = UN8GF2STDS;
 				INFOPLIST_FILE = GitHubApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
