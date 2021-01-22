@@ -196,7 +196,7 @@ extension SearchViewController {
                                                                  orderType: orderType) else {return}
       
       networkManager.performRequest(request: searchRequest, session: sharedSession) {
-        [weak self] (data) in
+        [weak self] (data, response) in
         
         guard let repositoriesResult = self?.networkManager.parseJSON(jsonData: data, toType: SearchResult.self) else {
           return

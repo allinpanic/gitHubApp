@@ -41,7 +41,7 @@ final class NetworkManager {
      return request
    }
   
-  func performRequest(request: URLRequest, session: URLSession, completionHandler: @escaping (Data)-> Void) {
+  func performRequest(request: URLRequest, session: URLSession, completionHandler: @escaping (Data, URLResponse?)-> Void) {
   
     let dataTask = session.dataTask(with: request) {
       data, response, error in
@@ -60,7 +60,7 @@ final class NetworkManager {
         return
       }
       
-      completionHandler(data)
+      completionHandler(data, response)
     }
     
     dataTask.resume()

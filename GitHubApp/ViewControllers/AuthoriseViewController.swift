@@ -9,9 +9,11 @@
 import UIKit
 import SnapKit
 import Kingfisher
+import LocalAuthentication
 
 final class AuthoriseViewController: UIViewController {
 // MARK: - Private Properties
+  private let service = "githubApp"
   
   private let gitHubLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/5/54/GitHub_Logo.png"
   
@@ -60,6 +62,10 @@ final class AuthoriseViewController: UIViewController {
     setupLayout()
     
     handleKeyboard()
+    
+    if readKeychain(service: service) != nil {
+      authenticateUser()      
+    }
   }    
 }
 // MARK: - setupLayout
@@ -117,21 +123,43 @@ extension AuthoriseViewController {
       !password.isEmpty {
       
       let userNamePassword = "\(userName):\(password)"
-      guard let userNamePasswordBase64 = userNamePassword.data(using: .utf8)?.base64EncodedString() else {return}
+      
+      guard let userNamePasswordBase64Data = userNamePassword.data(using: .utf8) else {return}
+      let userNamePasswordBase64String = userNamePasswordBase64Data.base64EncodedString()
       
       let url = URL(string: "https://api.github.com/user")
       
       var request = URLRequest(url: url!)
-      request.addValue("Basic \(userNamePasswordBase64)",
+      request.addValue("Basic \(userNamePasswordBase64String)",
         forHTTPHeaderField: "Authorization")
       
-      
-      networkManager.performRequest(request: request, session: sharedSession) { [weak self] data in
-        guard let gitUser = self?.networkManager.parseJSON(jsonData: data,
-                                                           toType: GitUser.self) else {return}
-
-        DispatchQueue.main.async {
-          self?.navigationController?.pushViewController(SearchViewController(user: gitUser), animated: true)
+      networkManager.performRequest(request: request, session: sharedSession) { [weak self] data, response in
+        guard let response = response as? HTTPURLResponse else {return}
+        let statusCode = response.statusCode
+        
+        guard let service = self?.service else {return}
+        
+        if statusCode == 200 {
+          let result = self?.saveToKeychain(passwordData: userNamePasswordBase64Data, service: service) ?? false
+          
+          if result {
+            print("password saved successfully")
+          } else {
+            print("can't save password")
+          }
+          
+          guard let gitUser = self?.networkManager.parseJSON(jsonData: data,
+                                                             toType: GitUser.self) else {return}
+          
+          DispatchQueue.main.async {
+            self?.navigationController?.pushViewController(SearchViewController(user: gitUser), animated: true)
+          }
+        } else {
+          DispatchQueue.main.async {
+            let alertVC = UIAlertController(title: "Authorization failed", message: "Try again", preferredStyle: .alert)
+            alertVC.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+            self?.present(alertVC, animated: true, completion: nil)
+          }
         }
       }
     } else {
@@ -139,5 +167,109 @@ extension AuthoriseViewController {
       alertVC.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
       self.present(alertVC, animated: true, completion: nil)
     }
+  }
+}
+// MARK: - Keychain Functions
+
+extension AuthoriseViewController {
+  private func keychainQuery (service: String, account: String?) -> [String: AnyObject] {
+    var query = [String: AnyObject]()
+    query[kSecClass as String] = kSecClassGenericPassword
+    query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlocked
+    query[kSecAttrService as String] = service as AnyObject
+    
+    if let account = account {
+      query[kSecAttrAccount as String] = account as AnyObject
+    }
+    return query
+  }
+  
+  private func readKeychain(service: String) -> Data? {
+    var query = keychainQuery(service: service, account: nil)
+    query[kSecMatchLimit as String] = kSecMatchLimitOne
+    query[kSecReturnData as String] = kCFBooleanTrue
+    query[kSecReturnAttributes as String] = kCFBooleanTrue
+    
+    var queryResult: AnyObject?
+    let status = SecItemCopyMatching(query as CFDictionary, UnsafeMutablePointer(&queryResult))
+    
+    if status != noErr {
+      return nil
+    }
+    
+    guard let item = queryResult as? [String : AnyObject],
+      let passwordData = item[kSecValueData as String] as? Data else {
+        return nil
+    }
+    return passwordData
+  }
+  
+  private func saveToKeychain(passwordData: Data, service: String) -> Bool {
+    if readKeychain(service: service) != nil {
+      var attributesToUpdate = [String: AnyObject]()
+      attributesToUpdate[kSecValueData as String] = passwordData as AnyObject
+      
+      let query = keychainQuery(service: service, account: nil)
+      let status = SecItemUpdate(query as CFDictionary, attributesToUpdate as CFDictionary)
+      return status == noErr
+    }
+    
+    var item = keychainQuery(service: service, account: nil)
+    item[kSecValueData as String] = passwordData as AnyObject
+    let status = SecItemAdd(item as CFDictionary, nil)
+    return status == noErr
+  }
+}
+// MARK: - TouchId functions
+
+extension AuthoriseViewController {
+  private func authenticateUser() {
+    let authContext = LAContext()
+    setupAuthContext(context: authContext)
+    
+    let reason = "Use for fast and safe authentication in your app"
+    var authError: NSError?
+    
+    if authContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) {
+      authContext.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
+      { [unowned self] (success, evaluateError) in
+        if success {
+          guard let userinfoData = self.readKeychain(service: self.service) else {return}
+          let userInfoString = userinfoData.base64EncodedString()
+          
+          let url = URL(string: "https://api.github.com/user")
+          
+          var request = URLRequest(url: url!)
+          request.addValue("Basic \(userInfoString)",
+            forHTTPHeaderField: "Authorization")
+          
+          self.networkManager.performRequest(request: request, session: self.sharedSession)
+          { [weak self] data, response in
+            guard let gitUser = self?.networkManager.parseJSON(jsonData: data,
+                                                               toType: GitUser.self) else {return}
+            
+            DispatchQueue.main.async {
+              self?.navigationController?.pushViewController(SearchViewController(user: gitUser), animated: true)
+            }
+          }
+        } else {
+          if let error = evaluateError {
+            print(error.localizedDescription)
+          }
+        }
+      }
+    } else {
+      if let error = authError {
+        print(error.localizedDescription)
+      }
+    }
+  }
+  
+  private func setupAuthContext(context: LAContext) {
+    context.localizedReason = "Use for fast and safe authentication in your app"
+    context.localizedCancelTitle = "Cancel"
+    context.localizedFallbackTitle = "Enter Password"
+    
+    context.touchIDAuthenticationAllowableReuseDuration = 600
   }
 }
